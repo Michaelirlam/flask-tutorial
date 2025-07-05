@@ -1,2 +1,2 @@
 venv/
-/flaskr/__psycache__
+./flaskr/__psycache__
