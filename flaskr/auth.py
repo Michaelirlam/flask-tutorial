@@ -11,7 +11,7 @@ bp = Blueprint("auth", __name__, url_prefix="/auth")
 @bp.route("/register", methods=("GET", "POST"))
 def register():
     # if method is POST, start validating the input
-    if register.method == "POST":
+    if request.method == "POST":
         # request.form is a special type of dict mapping submitted form keys and values
         username = request.form["username"]
         password = request.form["password"]
@@ -78,13 +78,31 @@ def login():
     # returns the login template if user is accessing for first time or if there is an error
     return render_template("auth/login.html")
 
-bp.before_app_request
+# Before app request is a function that runs before all view functions
+@bp.before_app_request
 def load_logged_in_user():
+    """checks if a user id is stored in the session and gets user's data from the database"""
     user_id = session.get("user_id")
 
     if user_id is None:
         g.user = None
     else:
-        g,user = get_db().execute(
+        g.user = get_db().execute(
             "SELECT * FROM user WHERE id = ?", (user_id)
         ).fetchone
+
+@bp.route("/logout")
+def logout():
+    """Clears session and redirects to index page"""
+    session.clear()
+    return redirect(url_for("index"))
+
+def login_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for("auth.login"))
+        
+        return view(**kwargs)
+    
+    return wrapped_view
