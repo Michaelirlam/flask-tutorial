@@ -22,7 +22,7 @@ def index():
     # renders the index template and passes the lists of posts to it for display
     return render_template("blog/index.html", posts=posts)
 
-@bp.route("create", methods=("GET", "POST"))
+@bp.route("/create", methods=("GET", "POST"))
 @login_required
 def create():
     """Create a new blog post."""
@@ -55,7 +55,7 @@ def get_post(id, check_author=True):
         "SELECT p.id, title, body, created, author_id, username"
         " FROM post p JOIN user u ON p.author_id = u.id"
         " WHERE p.id = ?", 
-        (id)
+        (id,)
     ).fetchone()
 
     if post is None:
@@ -74,7 +74,7 @@ def update(id):
 
     # used to save post request details to variables to use in the SQL script
     if request.method == "POST":
-        title = request.form["ttile"]
+        title = request.form["title"]
         body = request.form["body"]
         error = None
 
@@ -89,7 +89,7 @@ def update(id):
         db = get_db()
         # Updates post in the database with user's changes"
         db.execute(
-            "UPDATE post SET title = ?. body = ?"
+            "UPDATE post SET title = ?, body = ?"
             " WHERE id = ?",
             (title, body, id)
         )
@@ -97,3 +97,16 @@ def update(id):
         return redirect(url_for("blog.index"))
     
     return render_template("blog/update.html", post=post)
+
+@bp.route("/<int:id>/delete", methods=("POST",))
+@login_required
+def delete(id):
+    """Deletes post from database"""
+    get_post(id)
+    db = get_db()
+    db.execute(
+        "DELETE FROM post WHERE id = ?",
+        (id,)
+    )
+    db.commit()
+    return redirect(url_for("blog.index"))
