@@ -26,3 +26,10 @@ def test_register_validate_input(client, username, password, message):
         data={"username": username, "password": password}
     )
     assert message in response.data
+
+def test_logout(client, auth):
+    auth.login()
+
+    with client:
+        auth.logout()
+        assert "user_id" not in session
