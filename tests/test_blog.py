@@ -1,6 +1,9 @@
 import pytest
 from flaskr.db import get_db
 
+# The index view should display information about the post that was added with the test data.
+# When logged in as the author, there should be a link to edit the post
+
 def test_index(client, auth):
     response = client.get("/")
     assert b"Log In" in response.data
@@ -13,6 +16,11 @@ def test_index(client, auth):
     assert b"by test on 2018-01-01" in response.data
     assert b"test\nbody" in response.data
     assert b"href='/1/update'" in response.data
+
+# A user must be logged in to access the create, update, and delete views.
+# The logged in user must be the author of the post to access update and delete,
+# otherwise a 403 Forbidden status is returned. If a post with the given id doesn’t exist,
+# update and delete should return 404 Not Found.
 
 @pytest.mark.parametrize("path", (
     "/create",
@@ -44,3 +52,48 @@ def test_author_required(app, client, auth):
 def test_exists_required(client, auth, path):
     auth.login()
     assert client.post(path).status_code == 404
+
+# The create and update views should render and return a 200 OK status for a GET request.
+# When valid data is sent in a POST request, create should insert the new post data into the database, 
+# and update should modify the existing data. Both pages should show an error message on invalid data.
+
+def test_create(client, auth, app):
+    auth.login()
+    assert client.get("/create").status_code == 200
+    client.post("/create", data={"title": "created", "body": ""})
+
+    with app.app_context():
+        db = get_db()
+        count = db.execute("SELECT COUNT(id) FROM post").fetchone()[0]
+        assert count == 2
+
+def test_update(client, auth, app):
+    auth.login()
+    assert client.get("/1/update").status_code == 200
+    client.post("/1/update", data={"title": "updated", "body": ""})
+
+    with app.app_context():
+        db = get_db()
+        post = db.execute("SELECT * FROM post WHERE id == 1").fetchone()
+        assert post["title"] == "updated"
+
+@pytest.mark.parametrize("path", (
+    "/create",
+    "/1/update",
+))
+def test_create_update_validate(client, auth, path):
+    auth.login()
+    response = client.post(path, data={"title": "", "body": ""})
+    assert b"Title is required." in response.data
+
+# The delete view should redirect to the index URL and the post should no longer exist in the database.
+
+def test_delete(client, auth, app):
+    auth.login()
+    response = client.post("/1/delete")
+    assert response.headers["location"] == "/"
+
+    with app.app_context():
+        db = get_db()
+        post = db.execute("SELECT * FROM post WHERE id == 1").fetchone()
+        assert post is None
