@@ -78,23 +78,23 @@ def update(id):
         body = request.form["body"]
         error = None
 
-    # checks to make sure a title has been provided and returns an error if not
-    if not title:
-        error = "Title is required"
+        # checks to make sure a title has been provided and returns an error if not
+        if not title:
+            error = "Title is required."
 
-    # Flashes error if one exists outside of no title which is handled above
-    if error is not None:
-        flash(error)
-    else:
-        db = get_db()
-        # Updates post in the database with user's changes"
-        db.execute(
-            "UPDATE post SET title = ?, body = ?"
-            " WHERE id = ?",
-            (title, body, id)
-        )
-        db.commit()
-        return redirect(url_for("blog.index"))
+        # Flashes error if one exists outside of no title which is handled above
+        if error is not None:
+            flash(error)
+        else:
+            db = get_db()
+            # Updates post in the database with user's changes"
+            db.execute(
+                "UPDATE post SET title = ?, body = ?"
+                " WHERE id = ?",
+                (title, body, id)
+            )
+            db.commit()
+            return redirect(url_for("blog.index"))
     
     return render_template("blog/update.html", post=post)
 

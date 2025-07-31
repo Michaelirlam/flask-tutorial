@@ -15,7 +15,7 @@ def test_index(client, auth):
     assert b"test title" in response.data
     assert b"by test on 2018-01-01" in response.data
     assert b"test\nbody" in response.data
-    assert b"href='/1/update'" in response.data
+    assert b'href="/1/update"' in response.data
 
 # A user must be logged in to access the create, update, and delete views.
 # The logged in user must be the author of the post to access update and delete,
@@ -43,7 +43,7 @@ def test_author_required(app, client, auth):
     assert client.post("/1/update").status_code == 403
     assert client.post("/1/delete").status_code == 403
     # current user doesn't see edit link
-    assert b"href='/1/update" not in client.get("/").data
+    assert b'href="/1/update"' not in client.get("/").data
 
 @pytest.mark.parametrize("path", (
     "/2/update",
@@ -74,7 +74,7 @@ def test_update(client, auth, app):
 
     with app.app_context():
         db = get_db()
-        post = db.execute("SELECT * FROM post WHERE id == 1").fetchone()
+        post = db.execute("SELECT * FROM post WHERE id = 1").fetchone()
         assert post["title"] == "updated"
 
 @pytest.mark.parametrize("path", (
